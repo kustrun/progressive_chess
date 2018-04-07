@@ -2,6 +2,74 @@ import Rules.Chessboard;
 import Rules.Move;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+
+class SahovnicaMeta {
+
+    private int g;
+    private int h;
+    private int f;
+    private Chessboard sahovnica;
+    private String zaporedjePotez;
+
+    public int getG() {
+        return g;
+    }
+
+    public void setG(int g) {
+        this.g = g;
+    }
+
+    public int getH() {
+        return h;
+    }
+
+    public void setH(int h) {
+        this.h = h;
+    }
+
+    public int getF() {
+        return f;
+    }
+
+    public void setF(int f) {
+        this.f = f;
+    }
+
+    public Chessboard getSahovnica() {
+        return sahovnica;
+    }
+
+    public void setSahovnica(Chessboard sahovnica) {
+        this.sahovnica = sahovnica;
+    }
+
+    public String getZaporedjePotez() {
+        return zaporedjePotez;
+    }
+
+    public void setZaporedjePotez(String zaporedjePotez) {
+        this.zaporedjePotez = zaporedjePotez;
+    }
+}
+
+class fComparator implements Comparator<Integer> {
+
+    @Override
+    public int compare(Integer x, Integer y) {
+
+        if(x < y) {
+            return -1;
+        }
+
+        if(x > y) {
+            return 1;
+        }
+
+        return 0;
+    }
+
+}
 
 public class Seminar1 {
 
@@ -36,6 +104,9 @@ public class Seminar1 {
     public String solve(String fen) {
         // TODO: Solve using A*
         // For now return a random solution
+        String solution = "";
+
+
         return solveRandom(fen);
     }
 
