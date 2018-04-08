@@ -125,7 +125,7 @@ public class Seminar1 {
         for(int i=0; i<len; i++) {
             char znak = fen.charAt(i);
             if(Character.isDigit(znak)) {
-                while(Character.isDigit(fen.charAt(i+1))) {
+                while((i+1) < len && Character.isDigit(fen.charAt(i+1))) {
                     znak = (char) (znak + fen.charAt(i+1) - '0');
                     i++;
                 }
@@ -138,13 +138,35 @@ public class Seminar1 {
         return noviFen;
     }
 
+    public static int[] poisciKralja(Chessboard sahovnica) {
+
+        int[] kralj = new int[2];
+        for(int i=0; i<8; i++) {
+            for(int j=0; j<8; j++) {
+                if((sahovnica.getColor() == Chessboard.BLACK && sahovnica.getBoard()[i][j] == Chessboard.KING)
+                        || (sahovnica.getColor() == Chessboard.WHITE && sahovnica.getBoard()[i][j] == Chessboard.KING_B)) {
+                    kralj[0] = j;
+                    kralj[1] = i;
+
+                    return kralj;
+                }
+            }
+        }
+
+        return null;
+
+    }
+
     public static int pokritostPolja(Chessboard sahovnica, int to_x, int to_y) {
 
-        List<Move> moznePoteze = sahovnica.getMoves();
-
         int stevec = 0;
-        for(Move poteza : moznePoteze) {
-            if(poteza.getCoordinates()[2] == to_x && poteza.getCoordinates()[3] == to_y) {
+
+        HashMap<String, Move> mozniPremiki = Rules.getPossibleMovesMap(sahovnica);
+        for (Map.Entry<String, Move> mozniPremik : mozniPremiki.entrySet()) {
+            Move premik = mozniPremik.getValue();
+            int[] koordinate = premik.getCoordinates();
+
+            if(koordinate[2] == to_x && koordinate[3] == to_y) {
                 stevec += 1;
             }
         }
@@ -217,11 +239,52 @@ public class Seminar1 {
         return st;
     }
 
+    public static int pokritostMatnegaKvadrataIgnoriranje(Chessboard sahovnica) {
+
+        String fen = sahovnica.getFEN();
+        String[] fenData = fen.split(" ");
+        String noviFen = "";
+
+        if(sahovnica.getColor() == Chessboard.BLACK) {
+            noviFen = fenData[0].replaceAll("[A-Z&&[^K]]", "1");
+            noviFen = sestejZaporedneStevilke(noviFen);
+            noviFen += " " + fenData[1] + " " + fenData[2];
+        } else if(sahovnica.getColor() == Chessboard.WHITE) {
+            noviFen = fenData[0].replaceAll("[a-z&&[^k]]", "1");
+            noviFen = sestejZaporedneStevilke(noviFen);
+            noviFen += " " + fenData[1] + " " + fenData[2];
+        }
+
+        Chessboard novaSahovnica = Chessboard.getChessboardFromFEN(noviFen);
+
+        //poisci kralja
+        int[] kralj = poisciKralja(novaSahovnica);
+
+        int st = 0;
+        for(int i=-1; i<2; i++) {
+            if((kralj[0]+i) < 0 || (kralj[0]+i) > 7) {
+                continue;
+            }
+
+            for(int j=-1; j<2; j++) {
+                if((kralj[1]+j) < 0 || (kralj[1]+j) > 7) {
+                    continue;
+                }
+
+                if (novaSahovnica.getBoard()[kralj[1] + j][kralj[0] + i] == Chessboard.EMPTY) {
+                    st += pokritostPolja(novaSahovnica, kralj[1] + j, kralj[0] + i);
+                }
+            }
+        }
+
+        return st;
+    }
+
     public static String findCheckmate(PriorityQueue<SahovnicaMeta> sahovnice) {
 
         PriorityQueue<SahovnicaMeta> preiskaneSahovnice = new PriorityQueue<>(1, new fComparator());
 
-        pokritostMatnegaKvadrata(Chessboard.getChessboardFromFEN("B1bnr3/p1kpp3/1N6/1p6/8/8/8/8 w 4"));
+        //pokritostMatnegaKvadrataIgnoriranje(Chessboard.getChessboardFromFEN("B7/2k5/1N6/1K6/8/8/8/8 w 4"));
 
         while(!sahovnice.isEmpty()) {
             SahovnicaMeta sahovnica = sahovnice.poll();
@@ -235,18 +298,18 @@ public class Seminar1 {
                 HashMap<String, Move> mozniPremiki = Rules.getPossibleMovesMap(sahovnica.getSahovnica());
                 for (Map.Entry<String, Move> mozniPremik : mozniPremiki.entrySet()) {
                     Move premik = mozniPremik.getValue();
-                    System.out.println("premik: " + premik.toString());
+                    //System.out.println("premik: " + premik.toString());
 
                     Chessboard novaPostavitev = Chessboard.getChessboardFromFEN(sahovnica.getSahovnica().getFEN());
                     novaPostavitev.makeMove(premik);
-                    System.out.println(novaPostavitev.getFEN());
+                    //System.out.println(novaPostavitev.getFEN());
 
                     if(!checkIfChessboardExists(sahovnice, novaPostavitev)) {
                         int g = sahovnica.getF();
-                        int h = pokritostMatnegaKvadrata(novaPostavitev);
+                        int h = pokritostMatnegaKvadrataIgnoriranje(novaPostavitev);
 
                         SahovnicaMeta novaSahovnica = new SahovnicaMeta();
-                        novaSahovnica.setF(g + h);
+                        novaSahovnica.setF(g+h);
                         novaSahovnica.setG(g);
                         novaSahovnica.setH(h);
                         novaSahovnica.setSahovnica(novaPostavitev);

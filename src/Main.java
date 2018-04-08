@@ -10,10 +10,14 @@ public class Main {
         Seminar1 solver = new Seminar1();
         InputData[] input = getInput();
 
-        int len = 1;
+        int len = 60;
         for(int i=0; i<len; i++) {
+            long startTime = System.currentTimeMillis();
             String solution = solver.solve(input[i].getFen());
-            System.out.printf("id: %d \t solution: %s \t calculated solution: %s\n", input[i].getId(), input[i].getSolution(), solution);
+            long endTime   = System.currentTimeMillis();
+
+            long totalTime = (endTime - startTime)/1000;
+            System.out.printf("id: %d \t time: %d \t solution: %s \t calculated solution: %s\n", input[i].getId(), totalTime, input[i].getSolution(), solution);
         }
 
         /*
