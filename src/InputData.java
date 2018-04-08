@@ -27,4 +27,5 @@ public class InputData {
     public void setSolution(String solution) {
         this.solution = solution;
     }
+
 }

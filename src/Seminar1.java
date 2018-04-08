@@ -1,8 +1,8 @@
 import Rules.Chessboard;
 import Rules.Move;
+import Rules.Rules;
 
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.*;
 
 class SahovnicaMeta {
 
@@ -53,16 +53,16 @@ class SahovnicaMeta {
     }
 }
 
-class fComparator implements Comparator<Integer> {
+class fComparator implements Comparator<SahovnicaMeta> {
 
     @Override
-    public int compare(Integer x, Integer y) {
+    public int compare(SahovnicaMeta x, SahovnicaMeta y) {
 
-        if(x < y) {
+        if(x.getF() > y.getF()) {
             return -1;
         }
 
-        if(x > y) {
+        if(x.getF() < y.getF()) {
             return 1;
         }
 
@@ -101,13 +101,206 @@ public class Seminar1 {
         return solution.substring(0, solution.length() - 1);
     }
 
+
+    public static boolean checkIfChessboardExists(PriorityQueue<SahovnicaMeta> sahovnice, Chessboard sahovnica) {
+
+        String fen1 = sahovnica.getFEN().split(" ")[0];
+        for(SahovnicaMeta trenutna : sahovnice) {
+            String fen2 = trenutna.getSahovnica().getFEN().split(" ")[0];
+
+            if(fen1.equals(fen2)) {
+                return true;
+            }
+
+        }
+
+        return false;
+
+    }
+
+    public static String sestejZaporedneStevilke(String fen) {
+
+        String noviFen = "";
+        int len = fen.length();
+        for(int i=0; i<len; i++) {
+            char znak = fen.charAt(i);
+            if(Character.isDigit(znak)) {
+                while(Character.isDigit(fen.charAt(i+1))) {
+                    znak = (char) (znak + fen.charAt(i+1) - '0');
+                    i++;
+                }
+
+            }
+
+            noviFen += znak;
+        }
+
+        return noviFen;
+    }
+
+    public static int pokritostPolja(Chessboard sahovnica, int to_x, int to_y) {
+
+        List<Move> moznePoteze = sahovnica.getMoves();
+
+        int stevec = 0;
+        for(Move poteza : moznePoteze) {
+            if(poteza.getCoordinates()[2] == to_x && poteza.getCoordinates()[3] == to_y) {
+                stevec += 1;
+            }
+        }
+
+        return stevec;
+    }
+
+    public static int pokritostMatnegaKvadrata(Chessboard sahovnica) {
+
+        String fen = sahovnica.getFEN();
+
+        //poisci kralja
+        int x = -1;
+        int y = -1;
+        for(int i=0; i<8; i++) {
+            for(int j=0; j<8; j++) {
+                if(sahovnica.getColor() == Chessboard.BLACK && sahovnica.getBoard()[i][j] == Chessboard.KING) {
+                    x = j;
+                    y = i;
+                    break;
+                } else if(sahovnica.getColor() == Chessboard.WHITE && sahovnica.getBoard()[i][j] == Chessboard.KING_B) {
+                    x = j;
+                    y = i;
+                    break;
+                }
+            }
+
+            if(x != -1 && y != -1) {
+                break;
+            }
+        }
+
+        int st = 0;
+        for(int i=-1; i<2; i++) {
+            if((x+i) < 0 || (x+i) > 7) {
+                continue;
+            }
+
+            for(int j=-1; j<2; j++) {
+                if((y+j) < 0 || (y+j) > 7) {
+                    continue;
+                }
+
+                if(sahovnica.getColor() == Chessboard.BLACK) {
+
+                    //Preveri ali je morda polje ze pokrito z nasprotnikovo figuro
+                    if (sahovnica.getBoard()[y + j][x + i] > Chessboard.EMPTY && sahovnica.getBoard()[y + j][x + i] < Chessboard.KING) {
+                        st += 1;
+                    }
+                    //polje se ni pokrito z nasprotnikovo figuro
+                    else if (sahovnica.getBoard()[y + j][x + i] == Chessboard.EMPTY) {
+                        st += pokritostPolja(sahovnica, y + j, x + i);
+                    }
+
+                } else if(sahovnica.getColor() == Chessboard.WHITE) {
+
+                    //Preveri ali je morda polje ze pokrito z nasprotnikovo figuro
+                    if (sahovnica.getBoard()[y + j][x + i] < Chessboard.EMPTY && sahovnica.getBoard()[y + j][x + i] > Chessboard.KING_B) {
+                        st += 1;
+                    }
+                    //polje se ni pokrito z nasprotnikovo figuro
+                    else if (sahovnica.getBoard()[y + j][x + i] == Chessboard.EMPTY) {
+                        st += pokritostPolja(sahovnica, y + j, x + i);
+                    }
+
+                }
+            }
+        }
+
+        return st;
+    }
+
+    public static String findCheckmate(PriorityQueue<SahovnicaMeta> sahovnice) {
+
+        PriorityQueue<SahovnicaMeta> preiskaneSahovnice = new PriorityQueue<>(1, new fComparator());
+
+        pokritostMatnegaKvadrata(Chessboard.getChessboardFromFEN("B1bnr3/p1kpp3/1N6/1p6/8/8/8/8 w 4"));
+
+        while(!sahovnice.isEmpty()) {
+            SahovnicaMeta sahovnica = sahovnice.poll();
+            preiskaneSahovnice.add(sahovnica);
+
+            if(sahovnica.getSahovnica().getGameStatus() == Chessboard.CHECKMATE && sahovnica.getSahovnica().getMovesLeft() == 0) {
+                System.out.println("konec");
+                return sahovnica.getZaporedjePotez();
+
+            } else {
+                HashMap<String, Move> mozniPremiki = Rules.getPossibleMovesMap(sahovnica.getSahovnica());
+                for (Map.Entry<String, Move> mozniPremik : mozniPremiki.entrySet()) {
+                    Move premik = mozniPremik.getValue();
+                    System.out.println("premik: " + premik.toString());
+
+                    Chessboard novaPostavitev = Chessboard.getChessboardFromFEN(sahovnica.getSahovnica().getFEN());
+                    novaPostavitev.makeMove(premik);
+                    System.out.println(novaPostavitev.getFEN());
+
+                    if(!checkIfChessboardExists(sahovnice, novaPostavitev)) {
+                        int g = sahovnica.getF();
+                        int h = pokritostMatnegaKvadrata(novaPostavitev);
+
+                        SahovnicaMeta novaSahovnica = new SahovnicaMeta();
+                        novaSahovnica.setF(g + h);
+                        novaSahovnica.setG(g);
+                        novaSahovnica.setH(h);
+                        novaSahovnica.setSahovnica(novaPostavitev);
+
+                        String opravljenePoteze = sahovnica.getZaporedjePotez();
+                        opravljenePoteze = opravljenePoteze.equals("") ? mozniPremik.getKey() : opravljenePoteze + ";" + mozniPremik.getKey();
+                        novaSahovnica.setZaporedjePotez(opravljenePoteze);
+
+                        sahovnice.add(novaSahovnica);
+                    }
+                }
+
+            }
+        }
+
+        return "";
+    }
+
     public String solve(String fen) {
         // TODO: Solve using A*
         // For now return a random solution
         String solution = "";
 
+        PriorityQueue<SahovnicaMeta> sahovnice = new PriorityQueue<SahovnicaMeta>(1, new fComparator());
 
-        return solveRandom(fen);
+        SahovnicaMeta sahovnica = new SahovnicaMeta();
+        sahovnica.setF(0);
+        sahovnica.setG(0);
+        sahovnica.setH(0);
+        sahovnica.setSahovnica(Chessboard.getChessboardFromFEN(fen));
+        sahovnica.setZaporedjePotez("");
+
+        sahovnice.add(sahovnica);
+
+        return findCheckmate(sahovnice);
+
+        /*
+        HashMap<String, Move> mozniPremiki = Rules.getPossibleMovesMap(zacetnaPostavitev);
+        for (Map.Entry<String, Move> mozniPremik: mozniPremiki.entrySet()) {
+            System.out.println(mozniPremik.getKey());
+            Move premik = mozniPremik.getValue();
+
+            System.out.println("wait");
+        }
+
+
+        SahovnicaMeta sahovnica = new SahovnicaMeta();
+        sahovnica.setG(0);
+        sahovnica.setH(0);
+        sahovnica.setF(0);
+
+
+        System.out.println("wait");
+        */
     }
 
     public static String studentId() {
