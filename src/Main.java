@@ -16,8 +16,8 @@ public class Main {
             String solution = solver.solve(input[i].getFen());
             long endTime   = System.currentTimeMillis();
 
-            long totalTime = (endTime - startTime)/1000;
-            System.out.printf("id: %d \t time: %d \t solution: %s \t calculated solution: %s\n", input[i].getId(), totalTime, input[i].getSolution(), solution);
+            long totalTime = (endTime - startTime);
+            System.out.printf("id: %d \t time: %d ms \t solution: %s \t calculated solution: %s\n", input[i].getId(), totalTime, input[i].getSolution(), solution);
         }
 
         /*
