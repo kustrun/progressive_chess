@@ -256,6 +256,18 @@ public class Seminar1 {
         return pokritost;
     }
 
+    public static int[][] copyBoard(int[][] board) {
+        int[][] newBoard = new int[8][8];
+
+        for(int i=0; i<8; i++) {
+            for(int j=0; j<8; j++){
+                newBoard[i][j] = board[i][j];
+            }
+        }
+
+        return newBoard;
+    }
+
     public static String poisciMat(PriorityQueue<SahovnicaMeta> sahovnice) {
 
         Zobrist zobrist = new Zobrist();
@@ -282,7 +294,7 @@ public class Seminar1 {
 
                     if(!preiskaneSahovnice.containsKey(hash)) {
 
-                        Chessboard novaPostavitev = Chessboard.getChessboardFromFEN(fen);
+                        Chessboard novaPostavitev = new Chessboard(copyBoard(sahovnica.getSahovnica().getBoard()), sahovnica.getSahovnica().getColor(), sahovnica.getSahovnica().getMovesLeft());
                         novaPostavitev.makeMove(premik);
 
                         SahovnicaMeta novaSahovnicaMeta = new SahovnicaMeta();
@@ -293,7 +305,8 @@ public class Seminar1 {
                         novaSahovnicaMeta.setStPotez(sahovnica.getStPotez() + 1);
                         novaSahovnicaMeta.setStVsehPotez(sahovnica.getStVsehPotez() - 1);
 
-                        int g = sahovnica.getF() + sahovnica.getStPotez()/sahovnica.getStVsehPotez();
+                        int[] koordinate = premik.getCoordinates();
+                        int g = sahovnica.getF() + 2*sahovnica.getStPotez()/sahovnica.getStVsehPotez();
                         int h = pokritostMatnegaKvadrata(novaSahovnicaMeta);
 
                         novaSahovnicaMeta.setF(g+h);
